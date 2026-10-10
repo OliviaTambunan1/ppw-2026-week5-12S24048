@@ -15,10 +15,11 @@ class KategoriFactory extends Factory
      *
      * @return array<string, mixed>
      */
-    public function definition(): array
-    {
-        return [
-            //
-        ];
-    }
+        public function definition(): array
+        {
+            return [
+                'kode_kategori' => strtoupper(fake()->unique()->lexify('???')),
+                'nama_kategori' => fake()->unique()->words(2, true),
+            ];
+        }
 }
