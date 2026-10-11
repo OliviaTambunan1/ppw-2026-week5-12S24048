@@ -1,58 +1,64 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SIPUS-Del — Sistem Informasi Perpustakaan Kampus Del
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Tugas Mandiri Minggu 5 — Pemrograman & Pengujian Web (12S3101), Institut Teknologi Del
+Olivia Tambunan (12S24048)
 
-## About Laravel
+Aplikasi web pengelolaan data buku dan kategori perpustakaan dengan arsitektur MVC (server-side rendering). Dibangun dengan Laravel 13.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Fitur Utama
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- CRUD **Buku** dan **Kategori** lewat `Route::resource` (7 aksi RESTful) dan Implicit Route Model Binding
+- Relasi Eloquent One-to-Many: `Kategori hasMany Buku`, `Buku belongsTo Kategori`, dengan proteksi `$fillable`
+- Validasi server-side (`$request->validate()`), proteksi CSRF (`@csrf`) dan method spoofing (`@method`)
+- Eager Loading (`with('kategori')`) untuk mencegah N+1 query
+- Layout Blade Component `<x-layout>` bertema Del Purple (#4C1D95), pagination, flash message, dan `@forelse`
+- Factory & Seeder: 5 kategori dan 20 buku
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Instalasi
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/OliviaTambunan1/ppw-2026-week5-12S24048.git
+cd ppw-2026-week5-12S24048
+composer install
+cp .env.example .env             # Windows PowerShell: copy .env.example .env
+php artisan key:generate
+touch database/database.sqlite   # Windows PowerShell: New-Item database/database.sqlite
+php artisan migrate:fresh --seed
+php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+## Bukti Audit SQL: Eager Loading vs N+1
 
-## Contributing
+Pengujian pada halaman `/buku` (10 data per halaman). Setiap kueri dicatat ke `storage/logs/laravel.log` lewat `DB::listen` di `AppServiceProvider`.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+**Dengan Eager Loading** — `Buku::with('kategori')->latest()->paginate(10)` → **3 kueri**
 
-## Code of Conduct
+```
+select count(*) as "aggregate" from "bukus"
+select * from "bukus" order by "created_at" desc limit 10 offset 0
+select * from "kategoris" where "kategoris"."id" in (1, 2, 3)
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+**Tanpa Eager Loading** — `Buku::latest()->paginate(10)` → **12 kueri** (N+1 problem)
 
-## Security Vulnerabilities
+```
+select count(*) as "aggregate" from "bukus"
+select * from "bukus" order by "created_at" desc limit 10 offset 0
+select * from "kategoris" where "kategoris"."id" = ? limit 1    <- diulang 10x, satu per buku
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+| Kondisi              | Jumlah kueri                        |
+| -------------------- | ----------------------------------- |
+| Tanpa Eager Loading  | 12 (1 count + 1 buku + 10 kategori) |
+| Dengan Eager Loading | 3 (1 count + 1 buku + 1 kategori)   |
 
-## License
+Tanpa `with()`, kategori diambil satu per satu untuk tiap buku (Lazy Loading), sehingga kueri bertambah seiring jumlah baris. Dengan `with('kategori')`, seluruh kategori diambil dalam satu kueri `WHERE id IN (...)`, jadi jumlah kueri tetap 3. Kueri `count` berasal dari `paginate()` untuk menghitung total halaman.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Struktur MVC
+
+| Lapisan    | Lokasi                                                              |
+| ---------- | ------------------------------------------------------------------- |
+| Model      | `app/Models/Buku.php`, `Kategori.php`                               |
+| View       | `resources/views/buku/`, `kategori/`, `components/layout.blade.php` |
+| Controller | `app/Http/Controllers/BukuController.php`, `KategoriController.php` |
+| Routes     | `routes/web.php`                                                    |
