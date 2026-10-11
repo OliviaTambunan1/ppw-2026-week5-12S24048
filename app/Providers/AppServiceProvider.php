@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,5 +24,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+
+        DB::listen(function ($query) {
+            Log::info(sprintf(
+                "[SQL AUDIT] (%.2f ms) %s", 
+                $query->time, 
+                $query->sql
+            ));
+    });    
     }
 }
