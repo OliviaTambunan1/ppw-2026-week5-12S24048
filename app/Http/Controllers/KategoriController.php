@@ -11,8 +11,12 @@ class KategoriController extends Controller
     private function rules(?Kategori $kategori = null): array
     {
         return [
-            'kode_kategori' => ['required', 'string', 'max:10',
-                                Rule::unique('kategoris', 'kode_kategori')->ignore($kategori?->id)],
+            'kode_kategori' => [
+                'required',
+                'string',
+                'max:10',
+                Rule::unique('kategoris', 'kode_kategori')->ignore($kategori?->id)
+            ],
             'nama_kategori' => ['required', 'string', 'min:3', 'max:100'],
         ];
     }
