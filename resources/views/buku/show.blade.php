@@ -14,6 +14,7 @@
                 <dd class="col-sm-9">{{ $buku->sinopsis ?: '-' }}</dd>
             </dl>
 
+            @auth
             <hr>
             <h5 class="text-del">Pinjamkan Buku</h5>
             <form action="{{ route('buku.pinjam', $buku->id) }}" method="POST" class="row g-3 mb-3">
@@ -34,6 +35,10 @@
                     <button type="submit" class="btn btn-del w-100">Pinjam</button>
                 </div>
             </form>
+            @else
+            <hr>
+            <p class="text-muted"><a href="{{ route('login') }}">Login sebagai pustakawan</a> untuk memproses peminjaman.</p>
+            @endauth
 
             <a href="{{ route('buku.index') }}" class="btn btn-outline-secondary">Kembali</a>
         </div>

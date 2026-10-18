@@ -14,8 +14,11 @@ class BukuSeeder extends Seeder
         $kategori = Kategori::pluck('id', 'kode_kategori');
 
         $penerbit = [
-            'Informatika Bandung', 'Andi Offset', 'Erlangga',
-            'Elex Media Komputindo', 'Gramedia Pustaka Utama',
+            'Informatika Bandung',
+            'Andi Offset',
+            'Erlangga',
+            'Elex Media Komputindo',
+            'Gramedia Pustaka Utama',
         ];
 
         $data = [
@@ -58,5 +61,22 @@ class BukuSeeder extends Seeder
                 'kategori_id' => $kategori[$kode],
             ]);
         }
+
+        // Sampel uji transaksi Minggu 6
+        Buku::factory()->create([
+            'judul'       => 'Arsitektur Perangkat Lunak Modern',
+            'penulis'     => 'Hasan Basri',
+            'kategori_id' => $kategori['PRG'],
+            'stok'        => 0,
+            'sinopsis'    => 'Sampel uji: stok kosong untuk menguji penolakan peminjaman.',
+        ]);
+
+        Buku::factory()->create([
+            'judul'       => 'Rekayasa Kebutuhan Perangkat Lunak',
+            'penulis'     => 'Citra Dewanti',
+            'kategori_id' => $kategori['SIS'],
+            'stok'        => 1,
+            'sinopsis'    => 'Sampel uji: stok tinggal satu untuk menguji pinjam dan kembali.',
+        ]);
     }
 }
